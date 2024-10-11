@@ -13,13 +13,12 @@ namespace Vanta\Integration\Temporal;
 interface TemporalClient
 {
     /**
-     * @param non-empty-string|class-string $type
-     * @param array<string, mixed> $attributes
      * @param non-empty-string $namespace
      */
-    public function getWorkflowsCount(
-        string $type,
-        array $attributes = [],
-        string $namespace = 'default',
-    ): int;
+    public function withNamespace(string $namespace): self;
+
+    /**
+     * @param non-empty-string $query
+     */
+    public function getWorkflowsCount(string $query): int;
 }

@@ -42,7 +42,7 @@ final readonly class TemporalRestClientBuilder
      */
     private function __construct(
         private PsrHttpClient $client,
-        public Serializer $serializer,
+        private Serializer $serializer,
         private ConfigurationClient $configuration,
         private array $middlewares,
     ) {
@@ -140,6 +140,7 @@ final readonly class TemporalRestClientBuilder
                 $this->configuration,
                 new PipelineMiddleware($this->middlewares, $this->client),
             ),
+            $this->configuration->namespace,
         );
     }
 }

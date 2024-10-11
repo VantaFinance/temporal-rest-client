@@ -16,7 +16,8 @@ final readonly class ConfigurationClient
      * @param non-empty-string $url
      */
     public function __construct(
-        public string $url
+        public string $url,
+        public string $namespace = 'default',
     ) {
     }
 
@@ -26,7 +27,19 @@ final readonly class ConfigurationClient
     public function withUrl(string $url): self
     {
         return new self(
-            url: $url
+            url: $url,
+            namespace: $this->namespace,
+        );
+    }
+
+    /**
+     * @param non-empty-string $namespace
+     */
+    public function withNamespace(string $namespace): self
+    {
+        return new self(
+            url: $this->url,
+            namespace: $namespace,
         );
     }
 }

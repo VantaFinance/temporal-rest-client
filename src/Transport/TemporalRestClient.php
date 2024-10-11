@@ -12,32 +12,40 @@ namespace Vanta\Integration\Temporal\Transport;
 
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Client\ClientInterface as HttpClient;
+use Symfony\Component\Serializer\Normalizer\UnwrappingDenormalizer;
 use Symfony\Component\Serializer\SerializerInterface as Serializer;
-use Vanta\Integration\Temporal\Response\WorkflowCountResponse;
 use Vanta\Integration\Temporal\TemporalClient;
 use Yiisoft\Http\Method;
 
 final readonly class TemporalRestClient implements TemporalClient
 {
+    /**
+     * @param non-empty-string $namespace
+     */
     public function __construct(
         private Serializer $serializer,
         private HttpClient $client,
+        private string $namespace,
     ) {
     }
 
-    public function getWorkflowsCount(string $type, array $attributes = [], string $namespace = 'default'): int
+    /**
+     * @param non-empty-string $namespace
+     */
+    public function withNamespace(string $namespace): self
     {
-        $query = [];
-        foreach ($attributes + ['WorkflowType' => $type] as $k => $v) {
-            $query[] = sprintf('%s="%s"', $k, $v);
-        }
-        $query = implode(' AND ', $query);
-        $query = http_build_query(['query' => $query]);
+        return new self($this->serializer, $this->client, $namespace);
+    }
 
-        $request = new Request(Method::GET, sprintf('/api/v1/namespaces/%s/workflow-count?%s', $namespace, $query));
+    public function getWorkflowsCount(string $query): int
+    {
+        $url     = sprintf('/api/v1/namespaces/%s/workflow-count?%s', $this->namespace, http_build_query(['query' => $query]));
+        $request = new Request(Method::GET, $url);
         $content = $this->client->sendRequest($request)->getBody()->__toString();
-        $data    = $this->serializer->deserialize($content, WorkflowCountResponse::class, 'json');
 
-        return $data->count;
+        // NB: API returns number as string, deserializing directly into `int` throws `NotNormalizableValueException`.
+        return intval($this->serializer->deserialize($content, 'string', 'json', [
+            UnwrappingDenormalizer::UNWRAP_PATH => '[count]',
+        ]));
     }
 }
